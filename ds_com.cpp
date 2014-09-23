@@ -16,6 +16,7 @@
 #include "imu_gyro.h"
 #include "imu_mag.h"
 #include "imu_sensor.h"
+#include "imu_accel.h"
 
 #define ARRAY_LEN(x) (sizeof(x) / sizeof((x)[0]))
 #define DEFAULT_TTYDEV "/dev/ttyS2"  // Telem 2 on pixhawk.
@@ -36,20 +37,25 @@ int ds_com_main(int argc, char * argv[]) {
     int c;
 
     union data_to_send {
-        unsigned char byte[2];
-        uint16_t word;
+        unsigned char byte[6];
+        uint16_t word[3];
     };
     data_to_send data;
 
     // Start with magnetometer (int16_t) z_raw.  It should vary between 6000 and 400
     auto mag_print = [](mag_report &report) {
-        //printf("\t MAG values: x:%8.4f \t y:%8.4f \t z:%8.4f\n", (double) report.x, (double) report.y, (double) report.z);
-        printf("\t MAG values: x_raw:%d \t y_raw:%d \t z_raw:%d\n", report.x_raw, report.y_raw, report.z_raw);
+          printf("MagX:%8.4f \t MagY:%8.4f \t MagZ:%8.4f \t", (double) report.x, (double) report.y, (double) report.z);
+        //printf("\t MagX:%d \t MagY:%d \t MagZ:%d  \t", report.x_raw, report.y_raw, report.z_raw);
     };
 
     auto gyro_print = [](gyro_report &report) {
-        printf("\t Gyro values: x:%8.4f \t y:%8.4f \t z:%8.4f\n", (double) report.x, (double) report.y, (double) report.z);
-        printf("\t Gyro values: x_raw:%8d \t y_raw:%8d \t z_raw:%8d\n\n", report.x_raw, report.y_raw, report.z_raw);
+        printf("\t GyroX:%8.4f \t GyroY:%8.4f \t GyroZ:%8.4f \t", (double) report.x, (double) report.y, (double) report.z);
+        //printf("\t GyroX:%d \t GyroY:%d \t GyroZ:%d  \t", report.x_raw, report.y_raw, report.z_raw);
+    };
+
+    auto accel_print = [](accel_report & report) {
+        printf("\t AccelX:%8.4f \t AccelY:%8.4f \t AccelZ:%8.4f\n", (double) report.x, (double) report.y, (double) report.z);
+        //printf("\t AccelX:%d \t AccelY:%d \t AccelZ:%d \n", report.x_raw, report.y_raw, report.z_raw);
     };
 
     IMU_Mag mag(mag_print);
@@ -63,6 +69,13 @@ int ds_com_main(int argc, char * argv[]) {
     status = gyro.init();
     if(status != OK) {
         printf("gyro status: %d\n", status);
+        return 1;
+    }
+
+    IMU_Accel accel(accel_print);
+    status = accel.init();
+    if(status != OK) {
+        printf("accel status %d\n", status);
         return 1;
     }
 
@@ -105,9 +118,13 @@ int ds_com_main(int argc, char * argv[]) {
     int res;
     while (1) {
         mag.read_report();
-        data.word = mag.m_z_raw;
+        gyro.read_report();
+        accel.read_report();
+        data.word[0] = mag.m_x_raw;
+        data.word[1] = mag.m_y_raw;
+        data.word[2] = mag.m_z_raw;
 
-        res = write(fd, &data.byte[0], 2);
+        res = write(fd, &data.byte[0], 6);
         if(res < 0) {
             printf("ERROR writing %x\n", data.byte[0]);
             return 1;
@@ -121,7 +138,7 @@ int ds_com_main(int argc, char * argv[]) {
             data.byte[1] = 65;
         } 
         */
-        usleep(5000);
+        usleep(10);
     }
     
     close(fd);

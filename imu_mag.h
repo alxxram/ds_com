@@ -19,6 +19,8 @@ public:
     int init();
     void read_report(); 
     virtual ~IMU_Mag();
+    uint16_t m_x_raw; 
+    uint16_t m_y_raw; 
     uint16_t m_z_raw; 
     
 private:
