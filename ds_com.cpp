@@ -44,18 +44,18 @@ int ds_com_main(int argc, char * argv[]) {
 
     // Start with magnetometer (int16_t) z_raw.  It should vary between 6000 and 400
     auto mag_print = [](mag_report &report) {
-          printf("MagX:%8.4f \t MagY:%8.4f \t MagZ:%8.4f \t", (double) report.x, (double) report.y, (double) report.z);
-        //printf("\t MagX:%d \t MagY:%d \t MagZ:%d  \t", report.x_raw, report.y_raw, report.z_raw);
+        //printf("MagX:%8.4f \t MagY:%8.4f \t MagZ:%8.4f \t", (double) report.x, (double) report.y, (double) report.z);
+        //printf("\t MagX %d \t MagY %d \t MagZ %d  \t", report.x_raw, report.y_raw, report.z_raw);
     };
 
     auto gyro_print = [](gyro_report &report) {
-        printf("\t GyroX:%8.4f \t GyroY:%8.4f \t GyroZ:%8.4f \t", (double) report.x, (double) report.y, (double) report.z);
-        //printf("\t GyroX:%d \t GyroY:%d \t GyroZ:%d  \t", report.x_raw, report.y_raw, report.z_raw);
+        //printf("\t GyroX:%8.4f \t GyroY:%8.4f \t GyroZ:%8.4f \t", (double) report.x, (double) report.y, (double) report.z);
+        //printf("\t GyroX %d \t GyroY %d \t GyroZ %d  \t", report.x_raw, report.y_raw, report.z_raw);
     };
 
     auto accel_print = [](accel_report & report) {
         printf("\t AccelX:%8.4f \t AccelY:%8.4f \t AccelZ:%8.4f\n", (double) report.x, (double) report.y, (double) report.z);
-        //printf("\t AccelX:%d \t AccelY:%d \t AccelZ:%d \n", report.x_raw, report.y_raw, report.z_raw);
+        //printf("\t AccelX %d \t AccelY %d \t AccelZ %d \n", report.x_raw, report.y_raw, report.z_raw);
     };
 
     IMU_Mag mag(mag_print);
@@ -79,16 +79,8 @@ int ds_com_main(int argc, char * argv[]) {
         return 1;
     }
 
-    /*
-    for (int i = 0; i < 5000; i++) {
-        mag.read_report();
-        gyro.read_report();
-        sleep(1);
-    }
-    */
     printf ("Hello Skycatch!\n");
     
-
     int fd = open("/dev/ttyS2", O_RDWR | O_NOCTTY | O_NDELAY);
     if (fd < 0) {
         printf ("Failed to open fd\n");
@@ -112,33 +104,27 @@ int ds_com_main(int argc, char * argv[]) {
 		return 1;
     }
 
-
-//    data.byte[0] = 65;
-//    data.byte[1] = 65;
     int res;
+    data.byte[0] = 65;
     while (1) {
-        mag.read_report();
-        gyro.read_report();
-        accel.read_report();
-        data.word[0] = mag.m_x_raw;
-        data.word[1] = mag.m_y_raw;
-        data.word[2] = mag.m_z_raw;
+        //mag.read_report();
+        //gyro.read_report();
+        //accel.read_report();
 
-        res = write(fd, &data.byte[0], 6);
+        res = write(fd, &data.byte[0], 1);
         if(res < 0) {
-            printf("ERROR writing %x\n", data.byte[0]);
+            printf("ERROR writing\n");
             return 1;
+        } else if (res == 0) {
+            continue;
         }
         
-        /*
         data.byte[0]++;
-        data.byte[1]++;
         if (data.byte[0] == 91) {
             data.byte[0] = 65;
-            data.byte[1] = 65;
         } 
-        */
-        usleep(10);
+
+        usleep(5000);
     }
     
     close(fd);
