@@ -32,34 +32,46 @@ void print_usage() {
 float max_mag_x = 0;
 float min_mag_x = 0;
 int16_t max_raw_mag_x = 0;
-int16_t min_raw_max_x = 0;
+int16_t min_raw_mag_x = 0;
 
 float max_mag_y = 0;
 float min_mag_y = 0;
 int16_t max_raw_mag_y = 0;
-int16_t min_raw_max_y = 0;
+int16_t min_raw_mag_y = 0;
 
 float max_mag_z = 0;
 float min_mag_z = 0;
 int16_t max_raw_mag_z = 0;
-int16_t min_raw_max_z = 0;
+int16_t min_raw_mag_z = 0;
 
 template<typename T>
-void check_max(T &max_x, T &max_y, T &max_z,
+bool check_max(T &max_x, T &max_y, T &max_z,
                T   in_x, T   in_y, T   in_z)
 {
     max_x = (in_x > max_x) ? in_x : max_x;
     max_y = (in_y > max_y) ? in_y : max_y;
     max_z = (in_z > max_z) ? in_z : max_z;
+
+    if ((in_x >= max_x) || (in_y >= max_y) || (in_z >= max_z)) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 template<typename T>
-void check_min(T &min_x, T &min_y, T &min_z,
+bool check_min(T &min_x, T &min_y, T &min_z,
                T   in_x, T   in_y, T   in_z)
 {
     min_x = (in_x < min_x) ? in_x : min_x;
     min_y = (in_y < min_y) ? in_y : min_y;
     min_z = (in_z < min_z) ? in_z : min_z;
+
+    if ((in_x <= min_x) || (in_y <= min_y) || (in_z <= min_z)) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 int ds_com_main(int argc, char * argv[]) {
@@ -79,11 +91,18 @@ int ds_com_main(int argc, char * argv[]) {
     auto mag_print = [](mag_report &report) {
         //printf("MagX:%8.4f \t MagY:%8.4f \t MagZ:%8.4f \t", (double) report.x, (double) report.y, (double) report.z);
         //printf("\t MagX %d \t MagY %d \t MagZ %d  \t", report.x_raw, report.y_raw, report.z_raw);
-        check_max(max_mag_x, max_mag_y, max_mag_z, report.x, report.y, report.z);
-        check_min(min_mag_x, min_mag_y, min_mag_z, report.x, report.y, report.z);
-        printf("MagX_max:%8.4f MagX_min:%8.4f  ", (double)max_mag_x, (double)min_mag_x);
-        printf("MagY_max:%8.4f MagY_min:%8.4f  ", (double)max_mag_y, (double)min_mag_y);
-        printf("MagZ_max:%8.4f MagZ_min:%8.4f\n", (double)max_mag_z, (double)min_mag_z);
+        if (check_max(max_mag_x, max_mag_y, max_mag_z, report.x, report.y, report.z) ||
+            check_min(min_mag_x, min_mag_y, min_mag_z, report.x, report.y, report.z)) {
+            printf("MagX_max:%8.4f MagX_min:%8.4f  ", (double)max_mag_x, (double)min_mag_x);
+            printf("MagY_max:%8.4f MagY_min:%8.4f  ", (double)max_mag_y, (double)min_mag_y);
+            printf("MagZ_max:%8.4f MagZ_min:%8.4f\n", (double)max_mag_z, (double)min_mag_z);
+        }
+        if(check_max(max_raw_mag_x, max_raw_mag_y, max_raw_mag_z, report.x_raw, report.y_raw, report.z_raw) ||
+           check_min(min_raw_mag_x, min_raw_mag_y, min_raw_mag_z, report.x_raw, report.y_raw, report.z_raw)) {
+            printf("MagX_raw_max:%d MagX_raw_min:%d  ", max_raw_mag_x, min_raw_mag_x);
+            printf("MagY_raw_max:%d MagY_raw_min:%d  ", max_raw_mag_y, min_raw_mag_y);
+            printf("MagZ_raw_max:%d MagZ_raw_min:%d\n", max_raw_mag_z, min_raw_mag_z);
+        }
     };
 
     auto gyro_print = [](gyro_report &report) {
